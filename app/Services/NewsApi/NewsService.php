@@ -8,8 +8,8 @@ use App\Repositories\Contracts\TopHeadlinesRepositoryContract;
 use App\Services\NewsApi\Contracts\NewsApiServiceContract;
 use App\Services\NewsApi\Contracts\NewsServiceContract;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Response;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Http\Message\ResponseInterface;
 
 class NewsService implements NewsServiceContract
@@ -117,9 +117,24 @@ class NewsService implements NewsServiceContract
 
     public function getAllArticlesAboutInElastic(array $dataRequest): array
     {
+        $connection = new AMQPStreamConnection(
+            env('RABBITMQ_HOST'),
+            env('RABBITMQ_PORT'),
+            env('RABBITMQ_USERNAME'),
+            env('RABBITMQ_PASSWORD')
+        );
+        $channel = $connection->channel();
+
+        $queue = 'teste-queue'; // Substitua pelo nome da sua fila
+
+        $channel->basic_consume($queue, '', false, true, false, false, function (AMQPMessage $message) {
+            dd('Mensagem recebida: ', $message->getBody(), PHP_EOL);
+        });
+        return [];
+        /*
         $topScore = $this->newsRepository->searchTopScore($dataRequest['search']);
 
-        return $topScore->toArray();
+        return $topScore->toArray(); */
     }
 
     public function getTopHeadlinesInTheCountryInElastic(array $dataRequest): array

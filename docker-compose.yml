@@ -10,6 +10,8 @@ services:
       - MARIADB_DATABASE=bitnami_myapp
     ports:
       - '3307:3306'
+    networks:
+      - elastic
   ms:
     container_name: microservice
     image: docker.io/bitnami/laravel:10
@@ -20,17 +22,34 @@ services:
       - DB_PORT=3306
       - DB_USERNAME=bn_myapp
       - DB_DATABASE=bitnami_myapp
+      - SCOUT_DRIVER=elastic
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
     volumes:
       - './microservice-app:/app'
     depends_on:
       - mariadb
+    networks:
+      - elastic
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    container_name: elasticsearch
+    container_name: elastic-news-api
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.14
     environment:
       - discovery.type=single-node
     ports:
       - "9200:9200"
+    networks:
+      - elastic
+
+  rabbitmq:
+    container_name: rabbitmq-news-api
+    image: 'rabbitmq:3-management'
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      - RABBITMQ_DEFAULT_USER=newsapi
+      - RABBITMQ_DEFAULT_PASS=newsapi
     networks:
       - elastic
 

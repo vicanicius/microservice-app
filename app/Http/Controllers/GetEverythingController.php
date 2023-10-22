@@ -28,6 +28,8 @@ class GetEverythingController extends Controller
                 ->status(Response::HTTP_OK)
                 ->build();
         } catch (Exception $exception) {
+            dd($exception->getMessage());
+
             return $response->message('Unexpected error in '.self::class)
                 ->status(Response::HTTP_INTERNAL_SERVER_ERROR)
                 ->build();
