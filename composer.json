@@ -10,7 +10,7 @@
         "elasticsearch/elasticsearch": "^8.10",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.10",
-        "laravel/scout": "^10.4",
+        "laravel/scout": "^10.5",
         "laravel/tinker": "^2.8"
     },
     "require-dev": {

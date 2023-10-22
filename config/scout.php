@@ -143,7 +143,7 @@ return [
         'index' => env('ELASTICSEARCH_INDEX', 'default'),
         'hosts' => [
             [
-                'host' => env('ELASTICSEARCH_HOST', 'localhost'),
+                'host' => env('ELASTICSEARCH_HOST', 'elasticsearch'),
                 'port' => env('ELASTICSEARCH_PORT', 9200),
             ],
         ],
