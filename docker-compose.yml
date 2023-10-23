@@ -11,7 +11,7 @@ services:
     ports:
       - '3307:3306'
     networks:
-      - elastic
+      - minha-rede-local
   ms:
     container_name: microservice
     image: docker.io/bitnami/laravel:10
@@ -30,7 +30,7 @@ services:
     depends_on:
       - mariadb
     networks:
-      - elastic
+      - minha-rede-local
   elasticsearch:
     container_name: elastic-news-api
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.14
@@ -39,7 +39,7 @@ services:
     ports:
       - "9200:9200"
     networks:
-      - elastic
+      - minha-rede-local
 
   rabbitmq:
     container_name: rabbitmq-news-api
@@ -51,8 +51,8 @@ services:
       - RABBITMQ_DEFAULT_USER=newsapi
       - RABBITMQ_DEFAULT_PASS=newsapi
     networks:
-      - elastic
+      - minha-rede-local
 
 networks:
-  elastic:
-    driver: bridge
+  minha-rede-local:
+    external: true
