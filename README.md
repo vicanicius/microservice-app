@@ -2,6 +2,14 @@
 
 App dede estudo sobre microserviços, integrando a https://newsapi.org/ e o microserviço de resumo de texto(https://github.com/vicanicius/summary-news). 
 
+## Tecnologias utilizadas
+
+* Laravel 10.10
+* PHP 8.1
+* MariaDb
+* Elasticsearch
+* RabbitMq
+
 ## Primeiros passos
 
 * docker-compose up -d
