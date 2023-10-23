@@ -9,6 +9,7 @@ App dede estudo sobre microserviços, integrando a https://newsapi.org/ e o micr
 * importar as models para o scout:  php artisan scout:import "App\Models\TopHeadlines" e  php artisan scout:import "App\Models\News"
 * deixar o php artisan schedule:run executando
 * criar uma rede personalizada: docker network create --driver bridge minha-rede-local
+* copiar o .env.example para o .env
 
 ## Como usar
 * Faça uma requisição no endpoint /api/v1/news/everything para pesquisar uma noticia (collection anexada ao projeto)
