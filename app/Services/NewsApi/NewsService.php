@@ -2,7 +2,6 @@
 
 namespace App\Services\NewsApi;
 
-use App\Models\News;
 use App\Repositories\Contracts\NewsRepositoryContract;
 use App\Repositories\Contracts\TopHeadlinesRepositoryContract;
 use App\Services\NewsApi\Contracts\NewsApiServiceContract;
@@ -14,6 +13,11 @@ use Psr\Http\Message\ResponseInterface;
 
 class NewsService implements NewsServiceContract
 {
+    private const QUEUE_WITH_SUMMARY = 'news_summary_made';
+    private const QUEUE = 'summary_news';
+    private const DIRECT_EXCHANGE = 'amq.direct';
+    private const BIND_QUEUE = 'summary_news_queue';
+
     /**
      * @param  NewsApiServiceContract  $service
      * @param  NewsRepositoryContract  $newsRepository
@@ -38,7 +42,7 @@ class NewsService implements NewsServiceContract
             $response = $this->service->getAllArticlesAbout($queryString);
 
             foreach ($response as $article) {
-                $this->newsRepository->updateOrCreate(
+                $news = $this->newsRepository->updateOrCreate(
                     [
                         'url' => $article['url']
                     ],
@@ -54,6 +58,8 @@ class NewsService implements NewsServiceContract
                         'content' => $article['content'],
                     ]
                 );
+
+                $this->sendMessageToQueueAmqp($news);
             }
 
             return [];
@@ -117,24 +123,9 @@ class NewsService implements NewsServiceContract
 
     public function getAllArticlesAboutInElastic(array $dataRequest): array
     {
-        $connection = new AMQPStreamConnection(
-            env('RABBITMQ_HOST'),
-            env('RABBITMQ_PORT'),
-            env('RABBITMQ_USERNAME'),
-            env('RABBITMQ_PASSWORD')
-        );
-        $channel = $connection->channel();
-
-        $queue = 'teste-queue'; // Substitua pelo nome da sua fila
-
-        $channel->basic_consume($queue, '', false, true, false, false, function (AMQPMessage $message) {
-            dd('Mensagem recebida: ', $message->getBody(), PHP_EOL);
-        });
-        return [];
-        /*
         $topScore = $this->newsRepository->searchTopScore($dataRequest['search']);
 
-        return $topScore->toArray(); */
+        return $topScore->toArray();
     }
 
     public function getTopHeadlinesInTheCountryInElastic(array $dataRequest): array
@@ -142,5 +133,94 @@ class NewsService implements NewsServiceContract
         $topScore = $this->topHeadlinesRepository->searchTopScore($dataRequest['search']);
 
         return $topScore->toArray();
+    }
+
+    public function getSummaryNews(): void
+    {
+        $this->receiveMessageToQueueAmqp();
+    }
+
+    private function receiveMessageToQueueAmqp()
+    {
+        $connection = new AMQPStreamConnection(
+            env('RABBITMQ_HOST'),
+            env('RABBITMQ_PORT'),
+            env('RABBITMQ_USERNAME'),
+            env('RABBITMQ_PASSWORD')
+        );
+
+        $channel = $connection->channel();
+
+        $channel->basic_consume(self::QUEUE_WITH_SUMMARY, '', false, false, false, false, function ($message) {
+            $messageDecode = json_decode($message->body);
+            $this->newsRepository->update(
+                $messageDecode->news_id,
+                [
+                    'summary' => $messageDecode->summary,
+                ]
+            );
+        });
+
+        while (count($channel->callbacks)) {
+            $channel->wait();
+        }
+
+        $channel->close();
+        $connection->close();
+    }
+
+    private function sendMessageToQueueAmqp($news)
+    {
+        $amqp = $this->getAmqpConnectionAndChannel();
+
+        $this->amqpQueueDeclare($amqp['channel'], self::QUEUE);
+
+        $this->amqpQueueBind($amqp['channel'], self::QUEUE, self::DIRECT_EXCHANGE, self::BIND_QUEUE);
+
+        $message = [
+            'news' => $news,
+            'news_id' => $news->id,
+        ];
+
+        $amqp['channel']->basic_publish(
+            new AMQPMessage(json_encode($message)),
+            self::DIRECT_EXCHANGE,
+            self::BIND_QUEUE
+        );
+
+        $this->closeAmqpConnections($amqp);
+    }
+
+    private function getAmqpConnectionAndChannel(): array
+    {
+        $connection = new AMQPStreamConnection(
+            env('RABBITMQ_HOST'),
+            env('RABBITMQ_PORT'),
+            env('RABBITMQ_USERNAME'),
+            env('RABBITMQ_PASSWORD')
+        );
+
+        $channel = $connection->channel();
+
+        return [
+            'connection' => $connection,
+            'channel' => $channel,
+        ];
+    }
+
+    private function amqpQueueDeclare($channel, $queue)
+    {
+        $channel->queue_declare($queue, false, true, false, false);
+    }
+
+    private function amqpQueueBind($channel, $queue, $exchange, $bindName)
+    {
+        $channel->queue_bind($queue, $exchange, $bindName);
+    }
+
+    private function closeAmqpConnections($amqp)
+    {
+        $amqp['channel']->close();
+        $amqp['connection']->close();
     }
 }

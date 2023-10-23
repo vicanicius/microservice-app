@@ -19,4 +19,12 @@ interface BaseRepositoryContract
      * @return array
      */
     public function searchTopScore(string $value): Collection;
+
+    /**
+     * @param  int|Model  $model
+     * @param  array  $attributes
+     * @param  array  $options
+     * @return bool
+     */
+    public function update(int|Model $model, array $attributes = [], array $options = []): bool;
 }

@@ -25,4 +25,18 @@ abstract class BaseRepositoryEloquent implements BaseRepositoryContract
     {
         return $this->model::search("{$value}")->orderBy('_score', 'desc')->get();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function update(int|Model $model, array $attributes = [], array $options = []): bool
+    {
+        if ($model instanceof Model) {
+            return $model->update($attributes, $options);
+        }
+
+        return $this->model::query()
+            ->whereKey($model)
+            ->update($attributes, $options);
+    }
 }

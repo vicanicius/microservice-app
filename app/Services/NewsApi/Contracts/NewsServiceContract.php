@@ -17,4 +17,6 @@ interface NewsServiceContract
     public function getTopHeadlinesInTheCountry(array $dataRequest): array;
 
     public function getTopHeadlinesInTheCountryInElastic(array $dataRequest): array;
+
+    public function getSummaryNews(): void;
 }

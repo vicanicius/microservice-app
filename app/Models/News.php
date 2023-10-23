@@ -22,6 +22,7 @@ class News extends Model
         'author',
         'title',
         'description',
+        'summary',
         'url',
         'urlToImage',
         'publishedAt',
